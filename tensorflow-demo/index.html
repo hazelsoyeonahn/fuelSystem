@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0" />
+    <title>Time Series Forecasting Fuel Data</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700" rel='stylesheet' type='text/css'>
+    <link rel="preload" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" as="style"
+        onload="this.rel='stylesheet'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+</head>
+
+<body>
+    <div class="container blog-content">
+        <div class="card">
+            <div class="card-content">
+                <h1 class="title grey-text text-darken-4">Time Series Forecasting with TensorFlow.js</h1>
+            </div>
+
+            <div class="card-content">
+                <p>
+                    This fuel consumption prediction demo has been adapted from a stock price prediction model created
+                    by <a href="https://github.com/jinglescode/time-series-forecasting-tensorflowjs">JinglesCode.</a>
+                </p>
+                There are 4 parts to this demo:
+                <li>Load the historical fuel consumption data (hard-coded into index.js)</li>
+                <li>Prepare the training data by computing the simple moving average and generating a validation set
+                </li>
+                <li>Undergo training</li>
+                <li>Generate a prediction for the next window</li>
+                </p>
+            </div>
+        </div>
+
+        <div class="card" id="div_data">
+            <div class="card-content">
+                <span class="card-title">Get Stocks Data</span>
+                <p>
+                    <a href="https://www.transtats.bts.gov/fuel.asp target=" _blank>We will use United States airliner
+                        fuel data.</a>
+                    The fuel consumption column (in millions of gallons) has been converted to millions of liters for
+                    this demo, with data going back 22 years.
+                </p>
+
+                <p>
+                    The dataset contains total fuel consumption on a monthly basis, spanning back a period
+                    of 22 years.
+                    To prepare training dataset for our neural network, we will be using the moving average with a
+                    window size of 20 months.
+                </p>
+
+                <span class="card-title">Try It</span>
+
+                <p>
+                    Read BTS airline fuel data from the file.
+                </p>
+
+                <button class="btn-primary" id="btn-primary_load_data" onclick="onClickDrawGraph()">Draw Graph of BTS
+                    Airline Fuel Data</button>
+                <div class="row" id="div_container_linegraph" style="display:none">
+                    <div class="col-12">
+                        <div>
+                            <div id="div_linegraph_data" style="width:100%; height:350px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- E Get Stocks Data -->
+
+        <div class="card" id="div_sma">
+            <div class="card-content">
+                <span class="card-title">Compute Moving Average (SMA)</span>
+                <p>
+                    <!-- [purpose of this step, fun for the reader] -->
+                    <a href="https://en.wikipedia.org/wiki/Supervised_learning" target="_blank">Supervised Learning</a>
+                    will be used to train the network. This means that the model will learn to associate input data with
+                    a particular label.
+                    (In this case, the label will be the moving average for a specific time window e.g. 20 months.) The
+                    moving average is just the sum of the values over a time window, divided by the length of that time
+                    window.
+                </p>
+                <p>E.g., if the fuel consumption for the past 7 months were 3000, 2000, 3500, 4500, 2500, 5000, 5500,
+                    then the 7-day moving average is (3000 + 2000 + 3500 + 4500 + 2500 + 5000 + 5500) / 7.</p>
+                <p>The moving average is calculated by the ComputeSMA function in index.js</p>
+
+                <div class="row" id="div_container_getsmafirst">
+                    <div class="col s12">
+                        <p>To view the SMA, <a href="#div_data">load the BTS airline fuel data</a>.</p>
+                    </div>
+                </div>
+
+                <div class="row" id="div_container_getsma" style="display:none">
+                    <div class="col s12">
+                        <p>
+                            <!-- [how to use, what you want your reader to do after you end, as simple and obvious] -->
+                            Let's generate the training dataset, hit on the <i>Compute SMA and Draw Chart</i> button to
+                            generate the training data for the neural network.
+                        </p>
+                    </div>
+                    <div class="col s6">
+                        <div class="input-field col s12">
+                            <label for="input_windowsize">Window Size</label>
+                            <input type="number" id="input_windowsize" placeholder="a number" value="20">
+                            <small class="form-text text-muted">This is the "time window" for SMA in months.</small>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <button class="waves-effect waves-light btn-primary" id="btn-primary_draw_sma"
+                            onclick="onClickDisplaySMA()">Compute SMA and Draw Chart</button>
+                        <div class="spinner-border" id="load_draw_sma" style="display:none"></div>
+                    </div>
+                </div>
+
+                <div class="row" id="div_container_sma" style="display:none">
+                    <div class="col s12">
+                        <div class="card z-depth-2">
+                            <div class="card-content">
+                                <span class="card-title grey-text text-darken-4" id="div_linegraph_sma_title"></span>
+                                <div id="div_linegraph_sma" style="width:100%; height:350px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="div_container_trainingdata" style="display:none">
+                    <div class="col s12">
+                        <div class="card z-depth-2">
+                            <div class="card-content">
+                                <span class="card-title grey-text text-darken-4">Training Data (top 25 rows)</span>
+                                <div style="overflow-x: scroll;" id="div_trainingdata">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <!-- E Simple Moving Average -->
+
+        <div class="card" id="div_train">
+            <div class="card-content">
+                <span class="card-title">Train Neural Network</span>
+                <p>
+                    <!-- [purpose of this step, fun for the reader] -->
+                    The data can now be passed into the Tensorflow model. For this, a <a
+                        href="https://js.tensorflow.org/api/latest/#sequential" target="_blank">Sequential model</a> is
+                    being used.
+                    For time series data, it is best to use a <a href="https://js.tensorflow.org/api/latest/#layers.rnn"
+                        target="_blank">recurrent neural network
+                        (RNN) layer</a>, populated with <a href="https://js.tensorflow.org/api/latest/#layers.lstmCell"
+                        target="_blank">LSTM cells</a> which give the model some capability to remember and predict.
+                </p>
+                <p>
+                    The optimization model that will be used is TensorFlow's <a
+                        href="https://js.tensorflow.org/api/latest/#train.adam" target="_blank">Adam</a> model. The
+                    error will be calculated using<a
+                        href="https://js.tensorflow.org/api/latest/#losses.meanSquaredError" target="_blank">Root-Mean
+                        Squared.</a>
+                </p>
+                <p>
+                    To see how the above model is implemented in code, view 'model.js'.
+                </p>
+
+                <p>
+                    Hyperparameters (parameters used in the training process) available for tweaking:
+                    <li>Training Dataset Size (%): the amount of data used for training, while the rest is used for
+                        validation and prediction.</li>
+                    <li>Epochs: number of times the dataset is used to train the model (<a
+                            href="https://machinelearningmastery.com/difference-between-a-batch-and-an-epoch/"
+                            target="_blank">learn more</a>)</li>
+                    <li>Learning Rate: amount of change in the weights during training in each step (<a
+                            href="https://machinelearningmastery.com/learning-rate-for-deep-learning-neural-networks/"
+                            target="_blank">learn more</a>)</li>
+                    <li>Hidden LSTM Layers: increases the model complexity (<a
+                            href="https://machinelearningmastery.com/how-to-configure-the-number-of-layers-and-nodes-in-a-neural-network/"
+                            target="_blank">learn more</a>)</li>
+                </p>
+
+                <span class="card-title">Try It</span>
+                <div class="row" id="div_container_trainfirst">
+                    <div class="col s12">
+                        <p>Complete the previous section to <a href="#div_sma">prepare training
+                                data</a>.</p>
+                    </div>
+                </div>
+
+                <div id="div_container_train" style="display:none">
+                    <div class="row">
+                        <div class="col s12">
+                            <p>
+                                <!-- [how to use, what you want your reader to do after you end, as simple and obvious] -->
+                                You may tweak the hyperparameters and then hit the <i>Begin Training Model</i> button to
+                                train the model.
+                            </p>
+                        </div>
+                        <div class="col s6">
+                            <div class="input-field col s12">
+                                <label for="input_trainingsize">Training Dataset Size (%)</label>
+                                <input type="number" id="input_trainingsize" placeholder="a number between (1-99)"
+                                    value="75">
+                            </div>
+                        </div>
+                        <div class="col s6">
+                            <div class="input-field col s12">
+                                <label for="input_epochs">Epochs</label>
+                                <input type="number" id="input_epochs" placeholder="a number" value="10">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col s6">
+                            <div class="input-field col s12">
+                                <label for="input_learningrate">Learning Rate</label>
+                                <input type="number" id="input_learningrate" placeholder="a decimal" value="0.01">
+                                <small class="form-text text-muted">Typically range between 0.01 and 0.1</small>
+                            </div>
+                        </div>
+                        <div class="col s6">
+                            <div class="input-field col s12">
+                                <label for="input_hiddenlayers">Hidden LSTM Layers</label>
+                                <input type="number" id="input_hiddenlayers" placeholder="a number'" value="4">
+                                <small class="form-text text-muted">Number of LSTM layers</small>
+                            </div>
+                        </div>
+                        <div class="col s12">
+                            <button class="waves-effect waves-light btn-primary" id="btn-primary_draw_trainmodel"
+                                onclick="onClickTrainModel()">Begin Training Model</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row" id="div_container_training" style="display:none">
+                    <div class="col s12">
+                        <div class="card z-depth-2">
+                            <div class="card-content">
+                                <span class="card-title grey-text text-darken-4">Training Model</span>
+                                <p>A loss of less than 0.1 is ideal. If this does not happen after 5 epochs, tweak the
+                                    hyperparameters and window size and try again.</p>
+                                <h6>Progress</h6>
+                                <hr />
+                                <h6>Loss</h6>
+                                <div id="div_linegraph_trainloss" style="width:100%; height:250px;"></div>
+                                <hr />
+                                <h6>Logs</h6>
+                                <div id="div_traininglog"
+                                    style="overflow-x: scroll; overflow-y: scroll; height: 250px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <!-- E Train Neural Network -->
+
+        <div class="card">
+            <div class="card-content">
+                <span class="card-title">Validation</span>
+                <p>
+                    <!-- [purpose of this step, fun for the reader] -->
+                    Now that the model has been trained, the model.predict function from Tensorflow.js can predict
+                    future values.
+                    To check that the model is performing, we can have it try to predict the values for fuel consumption
+                    that were initially left out and put in the validation set.
+                    If the model predicts values that are close to the real values (the SMA line), the model is
+                    performing well.
+                </p>
+                <span class="card-title">Try It</span>
+                <p>If the predictions are poor, try adjusting the hyperparameters or window size.</p>
+
+                <div class="row" id="div_container_validatefirst"></div>
+
+                <div class="row" id="div_container_validate" style="display:none">
+                    <div class="col s12">
+                        <p>
+                            Hit the <i>Validate Model</i> button to see how this model performs.
+                        </p>
+                    </div>
+                    <div class="col s6">
+                        <button class="waves-effect waves-light btn-primary" id="btn_primary_validation"
+                            onclick="onClickValidate()">Validate Model</button>
+                        <div class="spinner-border" id="load_validating" style="display:none"></div>
+                    </div>
+                </div>
+                <div class="row" id="div_container_validating" style="display:none">
+                    <div class="col s12">
+                        <div class="card z-depth-2">
+                            <div class="card-content">
+                                <span class="card-title grey-text text-darken-4" id="div_predict_title">Compare True
+                                    values to Predicted values</span>
+                                <div id="div_validation_graph"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-content">
+                <span class="card-title">Make Prediction</span>
+                <p>
+                    The validation graph above should show 4 lines:
+                <ul>
+                    <li>The original fuel consumption data, labelled 'Actual Consumption'</li>
+                    <li>The training label, which is the simple moving average.</li>
+                    <li>The model's prediction for fuel data it has already seen (the training set, in green)</li>
+                    <li>The model's prediction for fuel data it has not already seen (the validation set, in red)</li>
+                </ul>
+                </p>
+                <p>
+                    The closeness of the red line to the SMA line indicates the quality of the model's predictions.
+                </p>
+
+                <span class="card-title">Try It</span>
+                <div class="row" id="div_container_predictfirst">
+                    <div class="col s12">
+                        <p>Don’t have a model to perform prediction? <a href="#div_train">Train your model</a>.</p>
+                    </div>
+                </div>
+                <div class="row" id="div_container_predict" style="display:none">
+                    <div class="col s12">
+                        <p>
+                            Hit the <i>Make Prediction</i> button to see what the model predicts the fuel consumption will be next month.
+                        </p>
+                    </div>
+                    <div class="col s6">
+                        <button class="waves-effect waves-light btn-primary" id="btn-primary_prediction"
+                            onclick="onClickPredict()">Make
+                            Prediction</button>
+                        <div class="spinner-border" id="load_predicting" style="display:none"></div>
+                    </div>
+                </div>
+                <div class="row" id="div_container_predicting" style="display:none">
+                    <div class="col s12">
+                        <div class="card z-depth-2">
+                            <div class="card-content">
+                                <span class="card-title grey-text text-darken-4" id="div_predict_title">Predicted</span>
+                                <div id="div_prediction_graph"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <!-- E Make Prediction -->
+
+
+        <div class="card">
+            <div class="card-content">
+                <span class="card-title">Conclusion</span>
+                <p>
+                    Why isn’t my Model Performing?<br />
+                    Note that extreme circumstances, such as Covid in March 2020, will not be easy for the model to
+                    predict.
+                    Other potential algorithms that could be used to aid in predictions include moving average
+                    convergence divergence (MACD) and relative strength index (RSI). In other cases,
+                    the hyperparameters may simply need to be tweaked.
+                </p>
+
+                <p>
+                    <a href="https://github.com/jinglescode/time-series-forecasting-pytorch" target="_blank">The author
+                        of this also has a Python version of this repository</a> that takes a different approach.
+                </p>
+            </div>
+        </div>
+    </div> <!-- E container -->
+
+
+    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.0/dist/tf.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+    <script src="./model.js"></script>
+    <script src="./index.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('.tooltipped').tooltip();
+            $('.scrollspy').scrollSpy();
+            $('.sidenav').sidenav();
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "time-series-forecasting-tensorflowjs",
+  "version": "1.0.0",
+  "description": "Load fuel data and perform predictions using Recurrent Neural Network & Long Short Term Memory (LSTM) with TensorFlow.js framework",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs-node": "^3.19.0"
+  }
+}
