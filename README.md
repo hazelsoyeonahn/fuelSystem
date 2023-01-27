@@ -2,7 +2,7 @@
 Proof of Concept for a fuel management system
 
 The Project
-Product Name Screen Shot This project consists of a full-stack web application written in React and Node.js for the purpose of making future predictions on time-series data. The front-end component of this application is a web application into which a user is able to upload Excel-formatted data for submission to a back-end written in Node. A machine learning approach is used to generate these predictions using Tensorflow.js.
+This project consists of a full-stack web application written in React and Node.js for the purpose of making future predictions on time-series data. The front-end component of this application is a web application into which a user is able to upload Excel-formatted data for submission to a back-end written in Node. A machine learning approach is used to generate these predictions using Tensorflow.js.
 
 The Node back-end contains database functionality and basic data processing/a neural network in order to train on the time-related features of the uploaded data. After this training is complete, a prediction is sent back to the front-end and displayed on a graph for up to 24 months. The training parameters of the neural network can be tweaked by the user in the front-end, with the user able to immediately re-train and generate a new prediction.
 
